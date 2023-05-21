@@ -1,0 +1,41 @@
+<html>
+    <body>
+        <h1>Chat</h1>
+        <div>
+            <h4>People online</h4>
+            <h5 id="online_count">0</h5>
+        </div>        
+        <ul id="messages"></ul>
+        <form>
+            <input id="message" type="text" />
+            <input type="submit" value="Send" />
+        </form>
+        <script type="text/javascript">
+            var messages = document.getElementById('messages');
+            var ws = new WebSocket('ws://' + window.location.host + '/api/chat');
+
+            ws.onmessage = function(event) {
+                var data = JSON.parse(event.data);
+                if (data.operation === "serverStatusUpdate") {
+                    var online_count = document.getElementById('online_count');
+                    online_count.innerHTML = data.usersOnline;
+                    return;
+                }
+                else if (data.operation === "newMessage") {
+                    var messages = document.getElementById('messages');
+                    var message = document.createElement('li');
+                    var content = document.createTextNode(data.message);
+                    message.appendChild(content);
+                    messages.appendChild(message);
+                }
+            };
+
+            document.forms[0].onsubmit = function () {
+                var input = document.getElementById('message');
+                ws.send(input.value);
+                input.value = '';
+                return false;
+            };
+        </script>
+    </body>
+</html>
