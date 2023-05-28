@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/paletas/paletas_website/internal/server/webapp/ws"
+	"github.com/paletas/paletas_website/internal/server/webapp/ws/chat"
 )
 
 type WebApp struct {
@@ -25,7 +25,7 @@ func configureFiberServer(app *fiber.App) {
 	app.Static("/", "./website")
 
 	configureRoutes(app)
-	ws.ConfigureChat(app)
+	chat.ConfigureChat(app)
 }
 
 func configureRoutes(app *fiber.App) {

@@ -1,41 +1,98 @@
 <html>
     <body>
-        <h1>Chat</h1>
-        <div>
-            <h4>People online</h4>
-            <h5 id="online_count">0</h5>
-        </div>        
-        <ul id="messages"></ul>
-        <form>
-            <input id="message" type="text" />
-            <input type="submit" value="Send" />
+        <h1>Chat</h1>   
+
+        <h4>Enter your username</h4>
+        <form id="login" onsubmit="LaunchChat(event)">
+            <input type="text" id="username" placeholder="Username" />
+            <input type="submit" value="Launch" />
         </form>
+
+        <div id="chats" style="display: none">
+            <div id="chat_window_global">
+                <ul id="messages"></ul>                
+                <id id="users" style="float: right;">
+                    <div>
+                        <h4>People online</h4>
+                        <h5 id="online_count">0</h5>
+                    </div>     
+                </id>
+            </div>
+            <form onsubmit="BroadcastMessage(event)">
+                <input id="message" type="text" />
+                <input type="submit" value="Send" />
+            </form>
+        </div>
         <script type="text/javascript">
             var messages = document.getElementById('messages');
-            var ws = new WebSocket('ws://' + window.location.host + '/api/chat');
 
-            ws.onmessage = function(event) {
-                var data = JSON.parse(event.data);
-                if (data.operation === "serverStatusUpdate") {
-                    var online_count = document.getElementById('online_count');
-                    online_count.innerHTML = data.usersOnline;
-                    return;
-                }
-                else if (data.operation === "newMessage") {
-                    var messages = document.getElementById('messages');
-                    var message = document.createElement('li');
-                    var content = document.createTextNode(data.message);
-                    message.appendChild(content);
-                    messages.appendChild(message);
-                }
-            };
+            function ChatsApi(username) {
+                var ws = new WebSocket('ws://' + window.location.host + '/api/chat/global?username=' + username);
 
-            document.forms[0].onsubmit = function () {
+                ws.onmessage = function(event) {
+                    var data = JSON.parse(event.data);
+
+                    if (data.channel === undefined) {
+
+                    }
+                    else {
+                        var chatContainer = document.getElementById("chat_window_" + data.channel);
+
+                        if (data.operation === "channelStatus") {
+                            var online_count = chatContainer.querySelector('#online_count');
+                            online_count.innerHTML = data.usersOnline;
+                            return;
+                        }
+                        else if (data.operation === "broadcastMessage") {
+                            var messages = chatContainer.querySelector('#messages');
+                            var message = document.createElement('li');
+                            var content = document.createTextNode(data.message);
+                            message.appendChild(content);
+                            messages.appendChild(message);
+                        }
+                    }
+                };
+
+                return {
+                    Socket: ws,
+                    IsConnected: function() { 
+                        return ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN;
+                    },
+                    BroadcastMessage: function(channel, message) {
+                        ws.send(JSON.stringify({ 
+                            operation: "broadcastMessage",
+                            channel: channel,
+                            message: message 
+                        }));
+                    }
+                };
+            }
+
+            let chatApi;
+            function LaunchChat(event) {
+                event.preventDefault();
+
+                var loginForm = document.getElementById('login');
+                var username = loginForm.elements.username.value;
+                if (username.length > 0) {
+                    chatApi = new ChatsApi(username);
+                    if (chatApi.IsConnected()) {
+                        var chats = document.getElementById('chats');
+                        chats.style.display = 'block';
+                        loginForm.disabled = true;
+                    }
+                }
+                return false;
+            }
+
+            function BroadcastMessage(event) {
+                event.preventDefault();
+
                 var input = document.getElementById('message');
-                ws.send(input.value);
+                chatApi.BroadcastMessage("global", input.value)
                 input.value = '';
                 return false;
-            };
+            }
         </script>
     </body>
 </html>
