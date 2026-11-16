@@ -1,8 +1,8 @@
 # Define the name of the binary
 WEBAPP_BINARY_NAME=paletas.webapp
 
-# Define the source files
-SRC_FILES=$(wildcard cmd/server/**/*.go) $(wildcard internal/**/*.go)
+# Define the main package to build
+SRC_FILES=./cmd/server
 
 # Define the build flags
 BUILD_FLAGS=-ldflags="-s -w"
